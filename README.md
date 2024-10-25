@@ -12,6 +12,7 @@ As I am on the quest to automate actions I do often. I found I was checking the 
 - INFLUXDB_ORG = Orginization set in Influxdb
 - INFLUXDB_URL (Default)(http://localhost:8086)
 - INFLUXDB_BUCKET (Default)(mortgage_rates)
+- SCRAPE_TIME (Default)(24) = Time in hours before the next website scrape
 
 ### Quick start
 

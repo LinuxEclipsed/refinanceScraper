@@ -62,6 +62,7 @@ def main():
     org = os.getenv('INFLUXDB_ORG')
     url = os.getenv('INFLUXDB_URL', 'http://localhost:8086')
     bucket = os.getenv('INFLUXDB_BUCKET', 'mortgage_rates')
+    scrapeTime = os.getenv('SCRAPE_TIME', 24)
 
     # Initialize the InfluxDB client
     client = InfluxDBClient(url=url, token=token, org=org)
@@ -69,7 +70,7 @@ def main():
     # Ensure the bucket exists, or create it
     ensure_bucket_exists(client, bucket, org)
 
-    # Infinite loop to check the rate twice a day
+    # Infinite loop to check the rate
     try:
         while True:
             rate = get_percentage()
@@ -80,8 +81,8 @@ def main():
                 print("Failed to extract the rate.")
 
             # Sleep for 12 hours (43200 seconds) before the next check
-            print("Waiting for the next check (12 hours)...")
-            time.sleep(12 * 60 * 60)
+            print("Waiting for the next check...")
+            time.sleep(scrapTime * 60 * 60)
 
     except KeyboardInterrupt:
         print("Stopping the loop...")
