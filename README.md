@@ -18,6 +18,8 @@ As I am on the quest to automate actions I do often. I found I was checking the 
 
 **Build container**
 
+Optional build the container locally or it can be pulled using the podman command.
+
 ```
 podman build --tag refinancescraper .
 ```
@@ -26,9 +28,10 @@ podman build --tag refinancescraper .
 
 ```
 podman container create \
---name refianacescraper \
+--name refinancescraper \
 -e INFLUXDB_TOKEN="<Influfdb Token>" \
 -e INFLUXDB_ORG="<Orginization Name>" \
 -e INFLUXDB_URL="http://<IP Address>:8086" \
-refinancescraper
+-e SCRAPE_TIME="24" \
+058264541271.dkr.ecr.us-west-1.amazonaws.com/linuxeclipsed/refinancescraper:latest
 ```
