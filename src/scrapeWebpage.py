@@ -7,7 +7,7 @@ from influxdb_client.client.write_api import WriteOptions
 import time
 import os
 
-# Scrape the website to get the percentage
+# Scrape the Filo Mortgage website to get the percentage
 def get_percentage():
     url = "https://www.filomortgage.com/"
     response = requests.get(url)
@@ -21,6 +21,20 @@ def get_percentage():
             match = pattern.search(result)
             if match:
                 return float(match.group(1))  # Get the number part and convert to float
+    return None
+
+# Retrieve the rate from the Zillow API
+def get_zillow_rate(zillowPID):
+    url = "https://mortgageapi.zillow.com/getRates"
+    params = {
+        'partnerId': zillowPID,
+        'durationDays': 1
+    }
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data['rates']['default']['samples'][0]['apr']  # First APR value
     return None
 
 # Check if the bucket exists, create it if it doesn't
@@ -40,20 +54,21 @@ def ensure_bucket_exists(client, bucket_name, org):
     print(f"Bucket '{bucket_name}' created.")
 
 # Save the rate to InfluxDB
-def save_to_influxdb(rate, client, bucket, org):
+def save_to_influxdb(rate, client, bucket, org, source):
     # Initialize the write API with WriteOptions
     write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 
     # Prepare data point to write
     point = (
         Point("mortgage_rate")
+        .tag("source", source)  # Tag with the source of the rate
         .field("rate", rate)
         .time(datetime.utcnow(), WritePrecision.NS)  # Add the timestamp
     )
 
     # Write the data point to the specified bucket
     write_api.write(bucket=bucket, org=org, record=point)
-    print(f"Rate {rate} written to InfluxDB.")
+    print(f"Rate {rate} from {source} written to InfluxDB.")
 
 # Main function
 def main():
@@ -62,7 +77,8 @@ def main():
     org = os.getenv('INFLUXDB_ORG')
     url = os.getenv('INFLUXDB_URL', 'http://localhost:8086')
     bucket = os.getenv('INFLUXDB_BUCKET', 'mortgage_rates')
-    scrapeTime = os.getenv('SCRAPE_TIME', 24)
+    scrapeTime = int(os.getenv('SCRAPE_TIME', 24))
+    zillowPID = os.getenv('ZILLOW_PID')
 
     # Initialize the InfluxDB client
     client = InfluxDBClient(url=url, token=token, org=org)
@@ -70,19 +86,29 @@ def main():
     # Ensure the bucket exists, or create it
     ensure_bucket_exists(client, bucket, org)
 
-    # Infinite loop to check the rate
+    # Infinite loop to check the rates
     try:
         while True:
-            rate = get_percentage()
-            if rate:
-                print(f"Extracted rate: {rate}")
-                save_to_influxdb(rate, client, bucket, org)
-            else:
-                print("Failed to extract the rate.")
+            # Get rates from both sources
+            filo_rate = get_percentage()
+            zillow_rate = get_zillow_rate(zillowPID)
 
-            # Sleep for 12 hours (43200 seconds) before the next check
+            # Write each rate to InfluxDB if available
+            if filo_rate:
+                print(f"Extracted Filo Mortgage rate: {filo_rate}")
+                save_to_influxdb(filo_rate, client, bucket, org, "Filo Mortgage")
+            else:
+                print("Failed to extract the Filo Mortgage rate.")
+
+            if zillow_rate:
+                print(f"Extracted Zillow rate: {zillow_rate}")
+                save_to_influxdb(zillow_rate, client, bucket, org, "Zillow")
+            else:
+                print("Failed to extract the Zillow rate.")
+
+            # Sleep for the specified interval before the next check
             print("Waiting for the next check...")
-            time.sleep(scrapTime * 60 * 60)
+            time.sleep(scrapeTime * 60 * 60)
 
     except KeyboardInterrupt:
         print("Stopping the loop...")
