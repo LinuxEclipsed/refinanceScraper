@@ -8,7 +8,7 @@ import time
 import os
 
 # Scrape the Filo Mortgage website to get the percentage
-def get_percentage():
+def getPercentage():
     url = "https://www.filomortgage.com/"
     response = requests.get(url)
 
@@ -24,7 +24,7 @@ def get_percentage():
     return None
 
 # Retrieve the rate from the Zillow API
-def get_zillow_rate(zillowPID):
+def getZillowRate(zillowPID):
     url = "https://mortgageapi.zillow.com/getRates"
     params = {
         'partnerId': zillowPID,
@@ -38,25 +38,25 @@ def get_zillow_rate(zillowPID):
     return None
 
 # Check if the bucket exists, create it if it doesn't
-def ensure_bucket_exists(client, bucket_name, org):
-    buckets_api = client.buckets_api()
+def ensureBucketExists(client, bucketName, org):
+    bucketsApi = client.buckets_api()
 
     # Check if the bucket exists
-    buckets = buckets_api.find_buckets().buckets
+    buckets = bucketsApi.find_buckets().buckets
     for bucket in buckets:
-        if bucket.name == bucket_name:
-            print(f"Bucket '{bucket_name}' already exists.")
+        if bucket.name == bucketName:
+            print(f"Bucket '{bucketName}' already exists.")
             return
 
     # Create the bucket if it doesn't exist
-    retention_rules = None  # Set custom retention rules if needed
-    buckets_api.create_bucket(bucket_name=bucket_name, org=org, retention_rules=retention_rules)
-    print(f"Bucket '{bucket_name}' created.")
+    retentionRules = None  # Set custom retention rules if needed
+    bucketsApi.create_bucket(bucket_name=bucketName, org=org, retention_rules=retentionRules)
+    print(f"Bucket '{bucketName}' created.")
 
 # Save the rate to InfluxDB
-def save_to_influxdb(rate, client, bucket, org, source):
+def saveToInfluxDB(rate, client, bucket, org, source):
     # Initialize the write API with WriteOptions
-    write_api = client.write_api(write_options=WriteOptions(batch_size=1))
+    writeApi = client.write_api(write_options=WriteOptions(batch_size=1))
 
     # Prepare data point to write
     point = (
@@ -67,7 +67,7 @@ def save_to_influxdb(rate, client, bucket, org, source):
     )
 
     # Write the data point to the specified bucket
-    write_api.write(bucket=bucket, org=org, record=point)
+    writeApi.write(bucket=bucket, org=org, record=point)
     print(f"Rate {rate} from {source} written to InfluxDB.")
 
 # Main function
@@ -84,25 +84,25 @@ def main():
     client = InfluxDBClient(url=url, token=token, org=org)
 
     # Ensure the bucket exists, or create it
-    ensure_bucket_exists(client, bucket, org)
+    ensureBucketExists(client, bucket, org)
 
     # Infinite loop to check the rates
     try:
         while True:
             # Get rates from both sources
-            filo_rate = get_percentage()
-            zillow_rate = get_zillow_rate(zillowPID)
+            filoRate = getPercentage()
+            zillowRate = getZillowRate(zillowPID)
 
             # Write each rate to InfluxDB if available
-            if filo_rate:
-                print(f"Extracted Filo Mortgage rate: {filo_rate}")
-                save_to_influxdb(filo_rate, client, bucket, org, "Filo Mortgage")
+            if filoRate:
+                print(f"Extracted Filo Mortgage rate: {filoRate}")
+                saveToInfluxDB(filoRate, client, bucket, org, "Filo Mortgage")
             else:
                 print("Failed to extract the Filo Mortgage rate.")
 
-            if zillow_rate:
-                print(f"Extracted Zillow rate: {zillow_rate}")
-                save_to_influxdb(zillow_rate, client, bucket, org, "Zillow")
+            if zillowRate:
+                print(f"Extracted Zillow rate: {zillowRate}")
+                saveToInfluxDB(zillowRate, client, bucket, org, "Zillow")
             else:
                 print("Failed to extract the Zillow rate.")
 
