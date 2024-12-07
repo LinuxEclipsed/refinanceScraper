@@ -14,13 +14,14 @@ def getPercentage():
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, 'html.parser')
-        pattern = re.compile(r'fixed rate loan today is as low as.*?(\d+(\.\d+)?)%')
-        result = soup.find(text=pattern)
+        text = soup.get_text()  # Get the plain text of the page
 
-        if result:
-            match = pattern.search(result)
-            if match:
-                return float(match.group(1))  # Get the number part and convert to float
+        # Look for "APR" and capture the number right before it
+        pattern = re.compile(r'(\d+(\.\d+)?)% APR')
+        match = pattern.search(text)
+
+        if match:
+            return float(match.group(1))  # Return the APR as a float
     return None
 
 # Retrieve the rate from the Zillow API
