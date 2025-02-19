@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 from influxdb_client import InfluxDBClient, Point, WritePrecision, BucketsApi
 from influxdb_client.client.write_api import WriteOptions
-import time
 import os
 
 # Scrape the Filo Mortgage website to get the percentage
@@ -78,7 +77,6 @@ def main():
     org = os.getenv('INFLUXDB_ORG')
     url = os.getenv('INFLUXDB_URL', 'http://localhost:8086')
     bucket = os.getenv('INFLUXDB_BUCKET', 'mortgage_rates')
-    scrapeTime = int(os.getenv('SCRAPE_TIME', 24))
     zillowPID = os.getenv('ZILLOW_PID')
 
     # Initialize the InfluxDB client
@@ -87,33 +85,25 @@ def main():
     # Ensure the bucket exists, or create it
     ensureBucketExists(client, bucket, org)
 
-    # Infinite loop to check the rates
-    try:
-        while True:
-            # Get rates from both sources
-            filoRate = getPercentage()
-            zillowRate = getZillowRate(zillowPID)
+    # Get rates from both sources
+    filoRate = getPercentage()
+    zillowRate = getZillowRate(zillowPID)
 
-            # Write each rate to InfluxDB if available
-            if filoRate:
-                print(f"Extracted Filo Mortgage rate: {filoRate}")
-                saveToInfluxDB(filoRate, client, bucket, org, "Filo Mortgage")
-            else:
-                print("Failed to extract the Filo Mortgage rate.")
+    # Write each rate to InfluxDB if available
+    if filoRate:
+        print(f"Extracted Filo Mortgage rate: {filoRate}")
+        saveToInfluxDB(filoRate, client, bucket, org, "Filo Mortgage")
+    else:
+        print("Failed to extract the Filo Mortgage rate.")
 
-            if zillowRate:
-                print(f"Extracted Zillow rate: {zillowRate}")
-                saveToInfluxDB(zillowRate, client, bucket, org, "Zillow")
-            else:
-                print("Failed to extract the Zillow rate.")
+    if zillowRate:
+        print(f"Extracted Zillow rate: {zillowRate}")
+        saveToInfluxDB(zillowRate, client, bucket, org, "Zillow")
+    else:
+        print("Failed to extract the Zillow rate.")
 
-            # Sleep for the specified interval before the next check
-            print("Waiting for the next check...")
-            time.sleep(scrapeTime * 60 * 60)
-
-    except KeyboardInterrupt:
-        print("Stopping the loop...")
-        client.close()
+    # Close the InfluxDB client
+    client.close()
 
 if __name__ == "__main__":
     main()
