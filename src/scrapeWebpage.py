@@ -55,20 +55,26 @@ def ensureBucketExists(client, bucketName, org):
 
 # Save the rate to InfluxDB
 def saveToInfluxDB(rate, client, bucket, org, source):
-    # Initialize the write API with WriteOptions
-    writeApi = client.write_api(write_options=WriteOptions(batch_size=1))
+    writeApi = None
+    try:
+        # Initialize the write API with WriteOptions
+        writeApi = client.write_api(write_options=WriteOptions(batch_size=1))
 
-    # Prepare data point to write
-    point = (
-        Point("mortgage_rate")
-        .tag("source", source)  # Tag with the source of the rate
-        .field("rate", rate)
-        .time(datetime.utcnow(), WritePrecision.NS)  # Add the timestamp
-    )
+        # Prepare data point to write
+        point = (
+            Point("mortgage_rate")
+            .tag("source", source)  # Tag with the source of the rate
+            .field("rate", rate)
+            .time(datetime.utcnow(), WritePrecision.NS)  # Add the timestamp
+        )
 
-    # Write the data point to the specified bucket
-    writeApi.write(bucket=bucket, org=org, record=point)
-    print(f"Rate {rate} from {source} written to InfluxDB.")
+        # Write the data point to the specified bucket
+        writeApi.write(bucket=bucket, org=org, record=point)
+        print(f"Rate {rate} from {source} written to InfluxDB.")
+    finally:
+        # Ensure the writeApi is closed
+        if writeApi:
+            writeApi.close()
 
 # Main function
 def main():
