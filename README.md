@@ -2,14 +2,14 @@
 
 ## Introduction
 
-As I am on the quest to automate actions I do often. I found I was checking the interest rates often in hopes of refinancing my loan at a lower rate. This container is used to scrape the filo mortgage website and the zillow API for the current interest rate they are offering. This then gets saved to an influxdb bucket. From there I can import the data to grafana. I can now chart the are and make alerts on drops. This is more of project for run rather than something very useful.
+As I am on the quest to automate actions I do often. I found I was checking the interest rates often in hopes of refinancing my loan at a lower rate. This container is used to scrape the filo mortgage website and the Zillow API for the current interest rate they are offering. This then gets saved to an InfluxDB bucket. From there, I can import the data to Grafana. I can now chart the area and make alerts on drops. This is more of a project for fun rather than something very useful.
 
 ## Configuration
 
 **Environment Variables**
 
-- INFLUXDB_TOKEN = API token from Ifluxdb. This needs access to the buket
-- INFLUXDB_ORG = Orginization set in Influxdb
+- INFLUXDB_TOKEN = API token from Ifluxdb. This needs access to the bucket
+- INFLUXDB_ORG = Organization set in Influxdb
 - INFLUXDB_URL (Default)(http://localhost:8086)
 - INFLUXDB_BUCKET (Default)(mortgage_rates)
 - ZILLOW_PID (Optional) = [Zillow Partner ID](https://www.zillow.com/mortgage/api/#/). 
@@ -18,7 +18,7 @@ As I am on the quest to automate actions I do often. I found I was checking the 
 
 **Build container**
 
-Optional build the container locally or it can be pulled using the podman command.
+Optionally, build the container locally, or it can be pulled using the podman command.
 
 ```
 podman build --tag refinancescraper .
